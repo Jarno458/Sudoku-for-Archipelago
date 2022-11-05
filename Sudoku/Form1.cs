@@ -148,6 +148,11 @@ namespace Sudoku
             {
                 var rX = Random.Next(9);
                 var rY = Random.Next(9);
+		while (cells[rX, rY].IsLocked)
+		{
+                    rX = Random.Next(9);
+                    rY = Random.Next(9);
+		}
 
                 // Style the hint cells differently and
                 // lock the cell so that player can't edit the value
