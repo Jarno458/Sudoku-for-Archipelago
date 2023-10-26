@@ -79,16 +79,18 @@ namespace Sudoku
             if (cell.IsLocked)
                 return;
 
-            if (e.KeyChar == '\b' && cell.Text.Length >= 1)
-                cell.Text = cell.Text.Remove(cell.Text.Length - 1);
+            if (e.KeyChar == '\b')
+                cell.Text = "";
             else if (e.KeyChar is >= '1' and <= '9')
             {
                 var number = int.Parse(e.KeyChar.ToString()).ToString();
 
                 if (!cell.Text.Contains(number))
                     cell.Text += number;
+
+                cell.Text = String.Concat(cell.Text.OrderBy(c => c));
             }
-            
+
             UpdateCellStyling(cell);
         }
 
