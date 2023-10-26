@@ -101,8 +101,8 @@ namespace Sudoku
 	        if (cell.IsLocked)
 		        return;
 
-	        if (e.KeyCode == Keys.Delete && cell.Text.Length >= 1)
-		        cell.Text = cell.Text.Substring(1);
+	        if (e.KeyCode == Keys.Delete)
+		        cell.Text = "";
 
 	        UpdateCellStyling(cell);
         }
