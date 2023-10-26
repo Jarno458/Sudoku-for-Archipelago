@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -6,7 +8,9 @@ using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
+using Microsoft.VisualBasic.Devices;
 using SudokuSpice.RuleBased;
+using System.Windows.Input;
 
 namespace Sudoku
 {
@@ -20,6 +24,11 @@ namespace Sudoku
         DeathLinkService deathLinkService;
 
         SudokuCell[,] cells = new SudokuCell[9, 9];
+
+        SudokuCell hover;
+
+        bool isSelecting;
+        List<SudokuCell> selected = new List<SudokuCell>();
 
         public Form1()
         {
@@ -36,6 +45,8 @@ namespace Sudoku
 #if DEBUG
             ServerText.Text = "localhost";
 #endif
+            this.KeyPress += form_keyPressed;
+            this.KeyDown += form_keyDowned;
         }
 
         void createCells()
@@ -46,19 +57,20 @@ namespace Sudoku
                 {
                     var cell = new SudokuCell();
 
-                    cell.Font = new Font(SystemFonts.DefaultFont.FontFamily, 20);
                     cell.Size = new Size(CellSize, CellSize);
-                    cell.ForeColor = SystemColors.ControlDarkDark;
                     cell.Location = new Point(i * CellSize, j * CellSize);
-                    cell.BackColor = ((i / 3) + (j / 3)) % 2 == 0 ? SystemColors.Control : Color.LightGray;
                     cell.FlatStyle = FlatStyle.Flat;
                     cell.FlatAppearance.BorderColor = Color.Black;
+                    cell.TabStop = false;
                     cell.X = i;
                     cell.Y = j;
 
-                    cell.KeyPress += cell_keyPressed;
-                    cell.KeyDown += cell_keyDowned;
-                    cell.MouseEnter += Cell_MouseEnter;
+                    cell.Clear();
+                    cell.Deselect();
+
+                    cell.MouseEnter += cell_MouseEnter;
+                    cell.MouseDown += cell_MouseDown;
+                    cell.MouseUp += cell_MouseUp;
 
                     cells[i, j] = cell;
                     panel1.Controls.Add(cell);
@@ -66,64 +78,89 @@ namespace Sudoku
             }
         }
 
-        void Cell_MouseEnter(object sender, EventArgs e)
+        void cell_MouseEnter(object sender, EventArgs  e)
         {
-	        if (sender is SudokuCell sudokuCell && !UserText.Focused && !ServerText.Focused)
-		        sudokuCell.Focus();
-	    }
-
-        void cell_keyPressed(object sender, KeyPressEventArgs e)
-        {
-            var cell = (SudokuCell)sender;
-
-            if (cell.IsLocked)
+            if(UserText.Focused || ServerText.Focused)
                 return;
 
-            if (e.KeyChar == '\b')
-                cell.Text = "";
-            else if (e.KeyChar is >= '1' and <= '9')
-            {
-                var number = int.Parse(e.KeyChar.ToString()).ToString();
+	        if (sender is not SudokuCell cell)
+                return;
 
-                if (!cell.Text.Contains(number))
-                    cell.Text += number;
-
-                cell.Text = String.Concat(cell.Text.OrderBy(c => c));
+            if(isSelecting){
+                selected.Add(cell);
+                cell.Select(true);
+                return;
             }
             
-            UpdateCellStyling(cell);
+            if(!selected.Contains(cell))
+		        cell.Select(false);
+            if(!selected.Contains(hover))
+                hover?.Deselect();
+            hover = cell;
+	    }
+
+        void cell_MouseDown(object sender, EventArgs e)
+        {
+            SudokuCell cell = (SudokuCell)sender;
+            this.ActiveControl = null;
+
+            if(selected.Contains(cell)){
+                foreach (SudokuCell c in selected)
+                    c.Deselect();
+                selected.Clear();
+
+                return;
+            }
+
+            isSelecting = true;
+            hover?.Deselect();
+            hover = null;
+
+            selected.Add(cell);
+		    cell.Select(true);
         }
 
-        void cell_keyDowned(object sender, KeyEventArgs e)
+        void cell_MouseUp(object sender, EventArgs e)
         {
-	        var cell = (SudokuCell)sender;
-
-	        if (cell.IsLocked)
-		        return;
-
-	        if (e.KeyCode == Keys.Delete)
-		        cell.Text = "";
-
-	        UpdateCellStyling(cell);
+            isSelecting = false;
         }
 
-        static void UpdateCellStyling(SudokuCell cell)
+
+
+        void form_keyPressed(object sender, KeyPressEventArgs e)
         {
-	        if (cell.Text.Length <= 1)
-	        {
-		        cell.Font = new Font(SystemFonts.DefaultFont.FontFamily, 20);
-		        cell.ForeColor = SystemColors.ControlDarkDark;
-	        }
-	        else if (cell.Text.Length <= 6)
-	        {
-		        cell.Font = new Font(SystemFonts.DefaultFont.FontFamily, 14, FontStyle.Italic);
-		        cell.ForeColor = Color.DarkCyan;
-	        }
-	        else
-	        {
-		        cell.Font = new Font(SystemFonts.DefaultFont.FontFamily, 8, FontStyle.Italic);
-		        cell.ForeColor = Color.DarkCyan;
-	        }
+            if(UserText.Focused || ServerText.Focused)
+                return;
+            
+            if (e.KeyChar == '\b'){
+                if(selected.Count == 0)
+                    hover?.Clear();
+                else foreach(SudokuCell cell in selected)
+                    cell.Clear();
+            }
+            else if (e.KeyChar is >= '1' and <= '9'){
+                int number = int.Parse(e.KeyChar.ToString());
+                
+                if(selected.Count == 0)
+                    hover?.AddAnswerNum(number);
+                else foreach(SudokuCell cell in selected)
+                    cell.AddAnswerNum(number);
+            }
+        }
+
+        void form_keyDowned(object sender, KeyEventArgs e)
+        {
+            if(UserText.Focused || ServerText.Focused)
+                return;
+
+	        if (e.KeyCode == Keys.Delete){
+                if(selected.Count == 0)
+                    hover?.Clear();
+                else foreach(SudokuCell cell in selected)
+                    cell.Clear();
+            }
+
+
         }
 
         void startNewGame()
