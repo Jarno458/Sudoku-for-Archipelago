@@ -90,7 +90,7 @@ namespace Sudoku
 
                 cell.Text = String.Concat(cell.Text.OrderBy(c => c));
             }
-
+            
             UpdateCellStyling(cell);
         }
 
