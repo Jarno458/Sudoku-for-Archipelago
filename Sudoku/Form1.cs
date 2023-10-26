@@ -87,6 +87,7 @@ namespace Sudoku
                 return;
 
             if(isSelecting){
+                clearPreview();
                 selected.Add(cell);
                 cell.Select(true);
                 return;
@@ -102,7 +103,10 @@ namespace Sudoku
         void cell_MouseDown(object sender, EventArgs e)
         {
             SudokuCell cell = (SudokuCell)sender;
+            
+            clearPreview();
             this.ActiveControl = null;
+
 
             if(selected.Contains(cell)){
                 foreach (SudokuCell c in selected)
@@ -118,7 +122,22 @@ namespace Sudoku
 
             selected.Add(cell);
 		    cell.Select(true);
+
+            if(selected.Count == 1 && cell.Text.Length == 1)
+                previewNum(int.Parse(cell.Text));
+            
         }
+
+        int _selected;
+        void previewNum(int num){
+            if(_selected == num) return;
+            _selected = num;
+
+            foreach (SudokuCell cell in cells)
+                cell.SetPreview(num);
+        }
+
+        void clearPreview() => previewNum(-1);
 
         void cell_MouseUp(object sender, EventArgs e)
         {

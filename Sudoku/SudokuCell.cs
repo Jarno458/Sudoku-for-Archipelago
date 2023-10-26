@@ -35,6 +35,7 @@ namespace Sudoku
         private static Color selectLight = Color.FromArgb(255,160,160,160), selectDark = Color.FromArgb(255,144,144,144);
 
         private static Color userText = Color.FromArgb(255,112,112,112), userMultiText = Color.FromArgb(255,0,128,128);
+        private static Color highlightText = Color.FromArgb(255,0,0,192);
         
         public void Select(bool fullSelect){
             if(fullSelect)
@@ -57,6 +58,29 @@ namespace Sudoku
             this.ForeColor = userText;
         }
 
+        public void SetPreview(int number){
+            if(this.Text == number.ToString())
+                this.ForeColor = highlightText;
+            else
+                UpdateTextCol();
+        }
+
+        private void UpdateTextCol(){
+            if (this.IsLocked){
+                this.Font = new Font(SystemFonts.DefaultFont.FontFamily, 20);
+                this.ForeColor = Color.Black;
+            }else if(this.Text.Length <= 1){
+                this.Font = new Font(SystemFonts.DefaultFont.FontFamily, 20);
+                this.ForeColor = userText;
+            } else if (this.Text.Length <= 6){
+		        this.Font = new Font(SystemFonts.DefaultFont.FontFamily, 14, FontStyle.Italic);
+                this.ForeColor = userMultiText;
+            } else{
+		        this.Font = new Font(SystemFonts.DefaultFont.FontFamily, 8, FontStyle.Italic);
+                this.ForeColor = userMultiText;
+            }
+        }
+
         public void AddAnswerNum(int number){
             if (this.IsLocked)
                 return;
@@ -71,8 +95,7 @@ namespace Sudoku
             
             this.Text += number.ToString();
 
-            this.Font = new Font(SystemFonts.DefaultFont.FontFamily, 20);
-            this.ForeColor = userText;
+            UpdateTextCol();
         }
 
         public void AddCenterNum(int number){
@@ -82,11 +105,7 @@ namespace Sudoku
             this.Text += number.ToString();
             this.Text = string.Concat(this.Text.OrderBy(c => c));
             
-            if (Text.Length <= 6)
-		        Font = new Font(SystemFonts.DefaultFont.FontFamily, 14, FontStyle.Italic);
-	        else
-		        Font = new Font(SystemFonts.DefaultFont.FontFamily, 8, FontStyle.Italic);
-            ForeColor = userMultiText;
+            UpdateTextCol();
         }
 
     }
