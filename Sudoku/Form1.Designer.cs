@@ -45,6 +45,11 @@
             this.DeathLinkCheckBox = new System.Windows.Forms.CheckBox();
             this.lblPassword = new System.Windows.Forms.Label();
             this.PasswordText = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
+            this.entryNormal = new System.Windows.Forms.RadioButton();
+            this.entryCenter = new System.Windows.Forms.RadioButton();
+            this.panelEntryMode = new System.Windows.Forms.Panel();
             this.SuspendLayout();
             // 
             // panel1
@@ -224,11 +229,68 @@
             this.PasswordText.Size = new System.Drawing.Size(521, 31);
             this.PasswordText.TabIndex = 102;
             // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.label4.Location = new System.Drawing.Point(693, 247);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(57, 30);
+            this.label4.TabIndex = 103;
+            this.label4.Text = "Entry Mode";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Font = new System.Drawing.Font("Segoe UI", 7F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.label5.Location = new System.Drawing.Point(775, 252);
+            this.label5.Name = "label3";
+            this.label5.Size = new System.Drawing.Size(57, 30);
+            this.label5.TabIndex = 104;
+            this.label5.Text = "(Press Tab or Hold Shift to toggle)";
+            //
+            // panelEntryMode
+            //
+            this.panelEntryMode.Controls.Add(entryNormal);
+            this.panelEntryMode.Controls.Add(entryCenter);
+            this.panelEntryMode.Location = new System.Drawing.Point(709, 270);
+            this.panelEntryMode.Size = new System.Drawing.Size(106, 78);
+            // 
+            // entryNormal
+            // 
+            this.entryNormal.AutoSize = true;
+            this.entryNormal.Checked = true;
+            this.entryNormal.Location = new System.Drawing.Point(0, 0);
+            this.entryNormal.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.entryNormal.Name = "entryNormal";
+            this.entryNormal.Size = new System.Drawing.Size(106, 29);
+            this.entryNormal.TabIndex = 105;
+            this.entryNormal.TabStop = true;
+            this.entryNormal.Text = "Normal";
+            this.entryNormal.UseVisualStyleBackColor = true;
+            this.entryNormal.CheckedChanged += SetEntryNormal;
+            // 
+            // entryCenter
+            // 
+            this.entryCenter.AutoSize = true;
+            this.entryCenter.Location = new System.Drawing.Point(0, 20);
+            this.entryCenter.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.entryCenter.Name = "entryCenter";
+            this.entryCenter.Size = new System.Drawing.Size(106, 29);
+            this.entryCenter.TabIndex = 106;
+            this.entryCenter.TabStop = true;
+            this.entryCenter.Text = "Center";
+            this.entryCenter.UseVisualStyleBackColor = true;
+            this.entryCenter.CheckedChanged += SetEntryCenter;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1226, 957);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.label5);
+            this.Controls.Add(this.panelEntryMode);
             this.Controls.Add(this.PasswordText);
             this.Controls.Add(this.lblPassword);
             this.Controls.Add(this.DeathLinkCheckBox);
@@ -273,6 +335,11 @@
         private System.Windows.Forms.CheckBox DeathLinkCheckBox;
         private System.Windows.Forms.Label lblPassword;
         private System.Windows.Forms.TextBox PasswordText;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.RadioButton entryNormal;
+        private System.Windows.Forms.RadioButton entryCenter;
+        private System.Windows.Forms.Panel panelEntryMode;
     }
 }
 

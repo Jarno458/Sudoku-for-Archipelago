@@ -1,12 +1,12 @@
-﻿using System;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
-using Archipelago.MultiClient.Net;
+﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
 using SudokuSpice.RuleBased;
+using System;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
 
 namespace Sudoku
 {
@@ -15,11 +15,12 @@ namespace Sudoku
         const int CellSize = 75;
 
         static readonly Random Random = new();
-        
+
         ArchipelagoSession session;
         DeathLinkService deathLinkService;
 
         SudokuCell[,] cells = new SudokuCell[9, 9];
+        EntryMode mode = EntryMode.Normal;
 
         public Form1()
         {
@@ -28,7 +29,7 @@ namespace Sudoku
             MaximizeBox = false;
 
             InitializeComponent();
-            
+
             createCells();
 
             startNewGame();
@@ -40,107 +41,159 @@ namespace Sudoku
 
         void createCells()
         {
-            for (int i = 0; i < 9; i++)
+            for (int x = 0; x < 9; x++)
             {
-                for (int j = 0; j < 9; j++)
+                for (int y = 0; y < 9; y++)
                 {
                     var cell = new SudokuCell();
 
-                    cell.Font = new Font(SystemFonts.DefaultFont.FontFamily, 20);
                     cell.Size = new Size(CellSize, CellSize);
-                    cell.ForeColor = SystemColors.ControlDarkDark;
-                    cell.Location = new Point(i * CellSize, j * CellSize);
-                    cell.BackColor = ((i / 3) + (j / 3)) % 2 == 0 ? SystemColors.Control : Color.LightGray;
+                    cell.Location = new Point(x * CellSize, y * CellSize);
+                    cell.BackColor = ((x / 3) + (y / 3)) % 2 == 0 ? SystemColors.Control : Color.LightGray;
                     cell.FlatStyle = FlatStyle.Flat;
                     cell.FlatAppearance.BorderColor = Color.Black;
-                    cell.X = i;
-                    cell.Y = j;
+                    cell.X = x;
+                    cell.Y = y;
 
-                    cell.KeyPress += cell_keyPressed;
-                    cell.KeyDown += cell_keyDowned;
-                    cell.MouseEnter += Cell_MouseEnter;
+                    cell.KeyDown += Cell_KeyDowned;
+                    cell.PreviewKeyDown += Cell_PreKeyDowned;
+                    cell.MouseClick += Cell_MouseClick;
+                    cell.UpdateCell();
 
-                    cells[i, j] = cell;
+                    cells[x, y] = cell;
                     panel1.Controls.Add(cell);
                 }
             }
         }
-
-        void Cell_MouseEnter(object sender, EventArgs e)
+        void ToggleMode() //Toggle between entry modes
         {
-	        if (sender is SudokuCell sudokuCell && !UserText.Focused && !ServerText.Focused)
-		        sudokuCell.Focus();
-	    }
+            if (mode == EntryMode.Normal)
+                entryCenter.PerformClick();
+            else if (mode == EntryMode.Center)
+                entryNormal.PerformClick();
+        }
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            switch (keyData)
+            {
+                //The default behavior for arrowkeys does not move properly between cells.
+                //Thus, to fix this, we need to disable the default behavior here.
+                case Keys.Left:
+                case Keys.Right:
+                case Keys.Down:
+                case Keys.Up:
+                    return true;
+                //By default tab cycles through focus elements, but it does so in a fairly useless order.
+                //Instead, we override it to toggle entry modes.
+                case Keys.Tab:
+                    ToggleMode();
+                    return true;
+            }
 
-        void cell_keyPressed(object sender, KeyPressEventArgs e)
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+        void Cell_MouseClick(object sender, EventArgs e)
+        {
+            var cell = (SudokuCell)sender;
+            cell.Focus();
+        }
+        void Cell_PreKeyDowned(object sender, PreviewKeyDownEventArgs e)
+        {
+            var cell = (SudokuCell)sender;
+            switch (e.KeyCode)
+            {
+                //Handle arrow keys moving between cells properly
+                case Keys.Left:
+                case Keys.Right:
+                case Keys.Up:
+                case Keys.Down:
+                    {
+                        int x = cell.X;
+                        int y = cell.Y;
+                        switch (e.KeyCode)
+                        {
+                            case Keys.Left:
+                                --x;
+                                break;
+                            case Keys.Right:
+                                ++x;
+                                break;
+                            case Keys.Up:
+                                --y;
+                                break;
+                            case Keys.Down:
+                                ++y;
+                                break;
+                        }
+                        if (x >= 0 && x < 9 && y >= 0 && y < 9)
+                            cells[x, y].Focus();
+                        break;
+                    }
+            }
+        }
+        void Cell_KeyDowned(object sender, KeyEventArgs e)
         {
             var cell = (SudokuCell)sender;
 
             if (cell.IsLocked)
                 return;
 
-            if (e.KeyChar == '\b' && cell.Text.Length >= 1)
-                cell.Text = cell.Text.Remove(cell.Text.Length - 1);
-            else if (e.KeyChar is >= '1' and <= '9')
+            switch (e.KeyCode)
             {
-                var number = int.Parse(e.KeyChar.ToString()).ToString();
-
-                if (!cell.Text.Contains(number))
-                    cell.Text += number;
+                case Keys.Delete:
+                case Keys.Back:
+                    cell.ClearMarks();
+                    break;
+                case Keys.D1:
+                case Keys.D2:
+                case Keys.D3:
+                case Keys.D4:
+                case Keys.D5:
+                case Keys.D6:
+                case Keys.D7:
+                case Keys.D8:
+                case Keys.D9:
+                    {
+                        int num = (int)(e.KeyCode - Keys.D0);
+                        cell.Mark(num, mode);
+                        break;
+                    }
+                case Keys.NumPad1:
+                case Keys.NumPad2:
+                case Keys.NumPad3:
+                case Keys.NumPad4:
+                case Keys.NumPad5:
+                case Keys.NumPad6:
+                case Keys.NumPad7:
+                case Keys.NumPad8:
+                case Keys.NumPad9:
+                    {
+                        int num = (int)(e.KeyCode - Keys.NumPad0);
+                        cell.Mark(num, mode);
+                        break;
+                    }
             }
-            
-            UpdateCellStyling(cell);
-        }
 
-        void cell_keyDowned(object sender, KeyEventArgs e)
-        {
-	        var cell = (SudokuCell)sender;
-
-	        if (cell.IsLocked)
-		        return;
-
-	        if (e.KeyCode == Keys.Delete && cell.Text.Length >= 1)
-		        cell.Text = cell.Text.Substring(1);
-
-	        UpdateCellStyling(cell);
-        }
-
-        static void UpdateCellStyling(SudokuCell cell)
-        {
-	        if (cell.Text.Length <= 1)
-	        {
-		        cell.Font = new Font(SystemFonts.DefaultFont.FontFamily, 20);
-		        cell.ForeColor = SystemColors.ControlDarkDark;
-	        }
-	        else if (cell.Text.Length <= 6)
-	        {
-		        cell.Font = new Font(SystemFonts.DefaultFont.FontFamily, 14, FontStyle.Italic);
-		        cell.ForeColor = Color.DarkCyan;
-	        }
-	        else
-	        {
-		        cell.Font = new Font(SystemFonts.DefaultFont.FontFamily, 8, FontStyle.Italic);
-		        cell.ForeColor = Color.DarkCyan;
-	        }
+            cell.UpdateCell();
         }
 
         void startNewGame()
         {
-	        var hintsCount = 0;
+            var hintsCount = 0;
 
-	        if (beginnerLevel.Checked)
-		        hintsCount = 48;
-	        else if (IntermediateLevel.Checked)
+            if (beginnerLevel.Checked)
+                hintsCount = 48;
+            else if (IntermediateLevel.Checked)
 #if DEBUG
                 hintsCount = 81;
 #else
-		        hintsCount = 35;
+                hintsCount = 35;
 #endif
             else if (AdvancedLevel.Checked)
-		        hintsCount = 24;
+                hintsCount = 24;
 
             var generator = new StandardPuzzleGenerator();
-	        var puzzle = generator.Generate(9, hintsCount, TimeSpan.Zero);
+            var puzzle = generator.Generate(9, hintsCount, TimeSpan.Zero);
 
             fillField(puzzle);
 
@@ -151,32 +204,31 @@ namespace Sudoku
 
         void fillField(PuzzleWithPossibleValues puzzle)
         {
-	        var solver = StandardPuzzles.CreateSolver();
-	        var solved = solver.Solve(puzzle);
-            
-            for (int x = 0; x < 9; x++)
-	        {
-		        for (int y = 0; y < 9; y++)
-		        {
-			        var cell = cells[x, y];
+            var solver = StandardPuzzles.CreateSolver();
+            var solved = solver.Solve(puzzle);
 
-			        cell.Value = solved[x, y].Value;
+            for (int x = 0; x < 9; x++)
+            {
+                for (int y = 0; y < 9; y++)
+                {
+                    var cell = cells[x, y];
+
+                    cell.Value = solved[x, y].Value;
                     cell.Font = new Font(SystemFonts.DefaultFont.FontFamily, 20);
 
                     if (puzzle[x, y].HasValue)
-			        {
-				        cell.Text = cell.Value.ToString();
-                        cell.ForeColor = Color.Black;
-                        cell.IsLocked = true;
-			        }
-			        else
                     {
-	                    cell.Text = "";
-                        cell.ForeColor = SystemColors.ControlDarkDark;
-				        cell.IsLocked = false;
+                        cell.FilledVal = cell.Value;
+                        cell.IsLocked = true;
                     }
+                    else
+                    {
+                        cell.FilledVal = 0;
+                        cell.IsLocked = false;
+                    }
+                    cell.UpdateCell();
                 }
-	        }
+            }
         }
 
         void checkButton_Click(object sender, EventArgs e)
@@ -186,13 +238,13 @@ namespace Sudoku
 
             foreach (var cell in cells)
             {
-                if (string.IsNullOrEmpty(cell.Text))
+                if (cell.FilledVal == 0)
                 {
                     isFilled = false;
                     break;
                 }
 
-                if (!string.Equals(cell.Value.ToString(), cell.Text))
+                if (cell.Value != cell.FilledVal)
                 {
                     hasError = true;
                 }
@@ -202,7 +254,7 @@ namespace Sudoku
             {
                 ShowMessageBox("Result", "Not all fields are filled yet", Color.Blue);
             }
-			else if (hasError)
+            else if (hasError)
             {
                 if (deathLinkService != null && DeathLinkCheckBox.Checked)
                 {
@@ -230,7 +282,7 @@ namespace Sudoku
                         var locationId = availableForHinting[Random.Next(0, availableForHinting.Length)];
 
                         session.Locations.ScoutLocationsAsync(true, locationId);
-                        
+
                         ShowMessageBox("Result", "Correct, unlocked 1 hint", Color.Blue);
                     }
                     else
@@ -248,7 +300,7 @@ namespace Sudoku
         void clearButton_Click(object sender, EventArgs e)
         {
             foreach (var cell in cells)
-                if (cell.IsLocked == false)
+                if (!cell.IsLocked)
                     cell.Clear();
         }
 
@@ -298,8 +350,8 @@ namespace Sudoku
 
                         return;
                     }
-                    
-	                LogWriteLine("Connected", Color.Green);
+
+                    LogWriteLine("Connected", Color.Green);
 
                     ConnectButton.Text = "Disconnect";
                     UserText.Enabled = false;
@@ -312,13 +364,13 @@ namespace Sudoku
                         startNewGame();
                         ShowMessageBox("DeathLink", $"DeathLink received from: {deathLink.Source}, reason: {deathLink.Cause}", Color.DarkRed);
                     };
-                    
+
                     DeathLinkCheckBox_CheckedChanged(sender, e);
                 }
             }
             catch (Exception exception)
             {
-	            ShowMessageBox("ERROR", exception.Message, Color.Red);
+                ShowMessageBox("ERROR", exception.Message, Color.Red);
             }
         }
 
@@ -343,7 +395,7 @@ namespace Sudoku
                     });
                     break;
 
-                case ItemSendLogMessage itemMessage when itemMessage.Item.Flags == ItemFlags.Advancement 
+                case ItemSendLogMessage itemMessage when itemMessage.Item.Flags == ItemFlags.Advancement
                                                          && itemMessage.IsReceiverTheActivePlayer:
                     Invoke(() =>
                     {
@@ -374,17 +426,17 @@ namespace Sudoku
 
         void LogWriteLine(string text, Color color)
         {
-	        LogWrite(text, color);
-	        APLog.AppendText(Environment.NewLine);
+            LogWrite(text, color);
+            APLog.AppendText(Environment.NewLine);
 
-	        APLog.ScrollToCaret();
+            APLog.ScrollToCaret();
         }
 
         void ShowMessageBox(string title, string message, Color color)
         {
-	        LogWriteLine(message, color);
-	        MessageBox.Show(message, title);
-	    }
+            LogWriteLine(message, color);
+            MessageBox.Show(message, title);
+        }
 
         void DeathLinkCheckBox_CheckedChanged(object sender, EventArgs e)
         {
@@ -395,6 +447,15 @@ namespace Sudoku
                 deathLinkService.EnableDeathLink();
             else
                 deathLinkService.DisableDeathLink();
+        }
+
+        private void SetEntryNormal(object sender, EventArgs e)
+        {
+            mode = EntryMode.Normal;
+        }
+        private void SetEntryCenter(object sender, EventArgs e)
+        {
+            mode = EntryMode.Center;
         }
     }
 }
