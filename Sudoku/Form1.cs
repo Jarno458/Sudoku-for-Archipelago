@@ -213,6 +213,7 @@ namespace Sudoku
                 {
                     var cell = cells[x, y];
 
+                    cell.Clear();
                     cell.Value = solved[x, y].Value;
                     cell.Font = new Font(SystemFonts.DefaultFont.FontFamily, 20);
 

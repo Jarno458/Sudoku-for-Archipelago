@@ -25,7 +25,8 @@ namespace Sudoku
             this.IsLocked = false;
             this.Text = string.Empty;
             this.FilledVal = 0;
-            this.MarkedVals.Initialize();
+            for (var q = 0; q < 9; ++q)
+                this.MarkedVals[q] = false;
         }
 
         // Clears the marks in a cell.
@@ -36,7 +37,8 @@ namespace Sudoku
                 return;
             if(this.FilledVal > 0)
                 this.FilledVal = 0;
-            else this.MarkedVals.Initialize();
+            else for (var q = 0; q < 9; ++q)
+                this.MarkedVals[q] = false;
             UpdateCell();
         }
 
