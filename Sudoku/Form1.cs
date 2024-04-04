@@ -220,7 +220,7 @@ namespace Sudoku
 
                     var missing = session.Locations.AllMissingLocations;
                     var alreadyHinted = session.DataStorage.GetHints()
-                        .Where(h => h.FindingPlayer == session.ConnectionInfo.Slot)
+                        .Where(h => h.ReceivingPlayer == session.ConnectionInfo.Slot)
                         .Select(h => h.LocationId);
 
                     var availableForHinting = missing.Except(alreadyHinted).ToArray();
