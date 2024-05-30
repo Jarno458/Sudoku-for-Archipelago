@@ -2,6 +2,11 @@
 This project is nolonger maintained, for those who still seek to play sudoku, plz use https://github.com/EmilyV99/APSudoku
 
 
+
+
+
+#### Info
+
 Sudoku puzzle game for usage with the Archipelago Multiworld
 
 http://archipelago.gg/games/Sudoku/info/en
